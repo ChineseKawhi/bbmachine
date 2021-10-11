@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package proto;
+
+
+message InfoReq {
+    string user_name = 1;
+}
+
+message InfoRes {
+    repeated Chat chats = 1;
+    repeated Message message = 2;
+}
+
+message CreateChatReq {
+    int64 me = 1;
+    repeated int64 chatter_ids = 2;
+}
+message CreateChatRes {
+    int64 chat_id = 1;
+    int64 creater_user_id = 2;
+    repeated int64 chatter_ids = 3;
+}
+
+message SendMessageReq {
+    int64 me = 1;
+    int64 chat_id = 2;
+    string body = 3;
+}
+
+message SendMessageRes {
+}
+
+
+message Chatter {
+    int64 user_id = 1;
+}
+
+message Chat {
+    int64 chat_id = 1;
+}
+
+message Message {
+    int64 sender = 1;
+    Chat chat = 2;
+    string body = 3;
+}

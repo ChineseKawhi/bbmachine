@@ -1,0 +1,6 @@
+database:
+  driver: mysql
+  source: root:app@tcp(10.21.248.62:3306)/bbmachine
+  max_idle_conns: 12
+  max_open_conns: 12
+addr: 127.0.0.1:1718
