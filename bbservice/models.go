@@ -80,7 +80,7 @@ func (chat *Chat) Insert() error {
 	now := time.Now().Unix()
 	sql := fmt.Sprintf(`INSERT INTO chat 
 		(updated_at, created_at, chat_name, chat_id, created_by) values
-		(?, ?, ?, ?)`)
+		(?, ?, ?, ?, ?)`)
 	_, err := DB.Exec(sql, now, now, chat.ChatName, chat.ChatId, chat.CreatedBy)
 	if err != nil {
 		return err
@@ -88,8 +88,8 @@ func (chat *Chat) Insert() error {
 	return nil
 }
 
-func (chat *Chat) Get(chatId int64) error {
-	err := DB.Get(chat, "SELECT updated_at, created_at, chat_name, chat_id, created_by FROM chat WHERE chat_id=?", chatId)
+func (chat *Chat) Get(chatName string) error {
+	err := DB.Get(chat, "SELECT updated_at, created_at, chat_name, chat_id, created_by FROM chat WHERE chat_name=?", chatName)
 	if err != nil {
 		return err
 	}

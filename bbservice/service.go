@@ -132,11 +132,29 @@ func (s *Service) NewChat(creatorId int64, chatterIds []int64) Chat {
 	return chat
 }
 
-func (s *Service) GetChat(chatId int64) Chat {
+func (s *Service) GetChat(chatName string) Chat {
 	chat := Chat{}
-	err := chat.Get(chatId)
+	err := chat.Get(chatName)
 	if err != nil {
 		fmt.Printf("err in GetChat: %v\n", err)
+	}
+	return chat
+}
+
+func (s *Service) GetCreateChat(createUserId int64, chatName string) Chat {
+	chat := Chat{}
+	err := chat.Get(chatName)
+	if err != nil {
+		fmt.Printf("err in GetChat: %v\n", err)
+	}
+	if chat.ChatId == 0 {
+		chat.ChatId = s.sf.Next().Int64()
+		chat.ChatName = chatName
+		chat.CreatedBy = createUserId
+		err = chat.Insert()
+		if err != nil {
+			fmt.Printf("err in InsertChat: %v\n", err)
+		}
 	}
 	return chat
 }

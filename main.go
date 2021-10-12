@@ -40,6 +40,7 @@ window.addEventListener("load", function(evt) {
     var output = document.getElementById("output");
     var info = document.getElementById("info");
     var input = document.getElementById("input");
+    var chat = document.getElementById("chat");
     var ws;
     var print = function(message) {
         var d = document.createElement("div");
@@ -60,7 +61,7 @@ window.addEventListener("load", function(evt) {
             ws = null;
         }
         ws.onmessage = function(evt) {
-            print("RECEIVE: " + evt.data);
+            print("RECE: " + evt.data);
         }
         ws.onerror = function(evt) {
             print("ERROR: " + evt.data);
@@ -71,8 +72,8 @@ window.addEventListener("load", function(evt) {
         if (!ws) {
             return false;
         }
-        print("SEND: " + input.value);
-        ws.send(input.value);
+        print("SEND: To: "+chat.value+": " + input.value);
+        ws.send(chat.value+"|"+input.value);
         return false;
     };
     document.getElementById("close").onclick = function(evt) {
@@ -96,6 +97,7 @@ You can change the message and send multiple times.
 <p><input id="info" type="text" value="2">
 <button id="open">Open</button>
 <button id="close">Close</button>
+<p><div>chat room</div><input id="chat" type="text" value="web-dev-sh">
 <p><input id="input" type="text" value="Hello world!">
 <button id="send">Send</button>
 </form>

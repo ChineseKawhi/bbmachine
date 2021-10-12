@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"path/filepath"
+	"strings"
 
 	"github.com/gorilla/websocket"
 	"github.com/spf13/viper"
@@ -79,7 +80,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) error {
 
 	conn := connection.Connection{Conn: c, WritingDb: true}
 	user := h.service.GetCreateUser(req.UserName)
-	_ = h.service.GetCreateChatter(user.UserId, 5577006791947779410)
+
 	h.service.Cm.Set(user.UserId, &conn)
 	h.service.ReceiveMessage(user.UserId, &conn)
 	conn.WritingDb = false
@@ -95,19 +96,16 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) error {
 				break
 			}
 			go func() {
-				chat := h.service.GetChat(5577006791947779410)
-				err := h.service.SendMessage(user, chat, string(message))
+				stream := strings.Split(string(message), "|")
+				chat := h.service.GetCreateChat(user.UserId, stream[0])
+				body := strings.Join(stream[1:], "")
+				_ = h.service.GetCreateChatter(user.UserId, chat.ChatId)
+				err := h.service.SendMessage(user, chat, body)
 				if err != nil {
 					fmt.Printf("err in send is: %v", err)
 				}
 				log.Printf("recv: %s", message)
 			}()
-
-			// err = c.WriteMessage(mt, message)
-			// if err != nil {
-			// 	log.Println("write:", err)
-			// 	break
-			// }
 		}
 	}()
 	return nil
