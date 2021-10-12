@@ -13,11 +13,23 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/spf13/viper"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+	"gopkg.in/natefinch/lumberjack.v2"
 )
+
+type LogConfig struct {
+	Env     string
+	Path    string
+	MaxSize uint64 `mapstructure:"max_size"`
+	Cron    string
+	Level   string
+}
 
 type Handler struct {
 	Config  *viper.Viper
-	service bbservice.Service
+	service *bbservice.Service
+	logger  *zap.Logger
 }
 
 func NewHandler() Handler {
@@ -32,7 +44,40 @@ func NewHandler() Handler {
 	viper.AddConfigPath(absConfigPath)
 	viper.ReadInConfig()
 
-	return Handler{service: bbservice.NewService(), Config: viper}
+	var cfg LogConfig
+	if err := viper.UnmarshalKey("logging", &cfg); err != nil {
+		panic(err)
+	}
+	encoderCfg := zapcore.EncoderConfig{
+		MessageKey:     "msg",
+		LevelKey:       "level",
+		NameKey:        "logger",
+		EncodeLevel:    zapcore.LowercaseLevelEncoder,
+		EncodeTime:     zapcore.ISO8601TimeEncoder,
+		EncodeDuration: zapcore.StringDurationEncoder,
+	}
+	encoder := zapcore.NewJSONEncoder(encoderCfg)
+	absPath, err := filepath.Abs(cfg.Path)
+	fmt.Printf("%v", absPath)
+	if err != nil {
+		panic(err)
+	}
+	rotateWriter := &lumberjack.Logger{
+		Filename: absPath,
+		MaxSize:  int(cfg.MaxSize), // MB
+	}
+	level, err := strToLevel(cfg.Level, zapcore.DebugLevel)
+	if err != nil {
+		panic(err)
+	}
+	core := zapcore.NewCore(encoder, zapcore.AddSync(rotateWriter), zap.NewAtomicLevelAt(level))
+	logger := zap.New(core)
+	if err != nil {
+		panic(err)
+	}
+	// logger := zap.NewExample()
+
+	return Handler{service: bbservice.NewService(), Config: viper, logger: logger}
 }
 
 func (h *Handler) CreateChat(w http.ResponseWriter, r *http.Request) error {
@@ -70,11 +115,11 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) error {
 		fmt.Print("parse InfoReq fail\n")
 		return err
 	}
-	fmt.Printf("User login: %+v\n", req)
+	h.logger.Info("login", zap.String("user", req.UserName))
 
 	c, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Print("upgrade:", err)
+		h.logger.Error("Upgrade", zap.Error(err))
 		return err
 	}
 
@@ -109,4 +154,13 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) error {
 		}
 	}()
 	return nil
+}
+
+func strToLevel(level string, defaultLevel zapcore.Level) (zapcore.Level, error) {
+	if len(level) != 0 {
+		if err := defaultLevel.UnmarshalText([]byte(level)); err != nil {
+			return zapcore.FatalLevel, fmt.Errorf("unsupported logging level %s", level)
+		}
+	}
+	return defaultLevel, nil
 }

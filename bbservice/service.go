@@ -20,7 +20,7 @@ type Service struct {
 	Cm connection.ConnectionManager
 }
 
-func NewService() Service {
+func NewService() *Service {
 
 	viper := viper.New()
 	viper.SetConfigType("yaml") // or viper.SetConfigType("YAML")
@@ -28,7 +28,7 @@ func NewService() Service {
 	// any approach to require this configuration into your program.
 	absConfigPath, err := filepath.Abs("./config")
 	if err != nil {
-		return Service{}
+		return &Service{}
 	}
 	viper.AddConfigPath(absConfigPath)
 	viper.ReadInConfig()
@@ -36,10 +36,10 @@ func NewService() Service {
 	err = InitDb(viper)
 	if err != nil {
 		fmt.Printf("err in InitDb: %v", err)
-		return Service{}
+		return &Service{}
 	}
 
-	return Service{sf: utils.Snowflake{}, config: viper, Cm: connection.NewConnectionManager()}
+	return &Service{sf: utils.Snowflake{}, config: viper, Cm: connection.NewConnectionManager()}
 }
 
 func (s *Service) GetCreateUser(userName string) User {
